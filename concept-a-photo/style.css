@@ -1,0 +1,458 @@
+/* ── Brand tokens: the ONLY place colors are defined. Values are the
+   NanoViricides IR page's own :root (--deep, --ink, --accent, --accent-lt);
+   the rest derive from them (color-mix: Chrome 111+ / Safari 16.2+).
+   As on the site, the vivid --accent (#5b62fe) is a FILL colour; text
+   accents on dark use --accent-lt. ── */
+:root {
+  --dark:      oklch(0.205 0.045 274);   /* site --deep */
+  --dark-2:    color-mix(in srgb, var(--dark) 70%, black);
+  --navy:      oklch(0.215 0.040 274);   /* site --ink */
+  --accent:    oklch(0.584 0.227 275);   /* site --accent, real #5b62fe */
+  --accent-d:  color-mix(in srgb, var(--accent) 82%, black);
+  --accent-lt: oklch(0.820 0.0905 275);  /* site --accent-lt: accent for use ON dark */
+  --gold:      oklch(0.820 0.0905 275);  /* secondary highlight = site --accent-lt (the site has no second hue) */
+  --gold-d:    color-mix(in srgb, var(--gold) 85%, black);
+  --white:     #ffffff;
+  --cta-ink:   var(--white);  /* white on #5b62fe = 4.5:1 */
+  --hi:        oklch(0.95 0.015 274);    /* cool off-white for motif labels */
+  --orbit:     oklch(0.86 0.06 274 / 0.30);
+  --font-head: 'Petrona', Georgia, 'Times New Roman', serif;
+  --font:      'Oxygen', system-ui, sans-serif;
+  --mono:      'Azeret Mono', ui-monospace, monospace;
+  --ease:      cubic-bezier(0.16,1,0.3,1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:300px; height:600px; overflow:hidden; background:var(--dark); }
+body { font-family:var(--font); -webkit-font-smoothing:antialiased; }
+a { text-decoration:none; color:inherit; }
+button { border:0; background:none; font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+
+/* ── Canvas ─────────────────────────────────────────────────────────
+   Fixed 300x600 stage. A crossfading slide stack sits at the bottom of
+   the z-order; persistent chrome (logo, nav, stats, CTA) is pinned on
+   top of it and never rotates. */
+#banner {
+  position:relative;
+  width:300px;
+  height:600px;
+  overflow:hidden;
+  cursor:pointer;
+  background:var(--dark);
+}
+
+/* ── Slide stack ────────────────────────────────────────────────── */
+#slides { position:absolute; inset:0; z-index:1; }
+
+.slide {
+  position:absolute;
+  inset:0;
+  opacity:0;
+  z-index:1;
+  pointer-events:none;
+  transition:opacity 0.9s ease;
+}
+.slide.active { opacity:1; z-index:2; pointer-events:auto; }
+
+/* Motif layer: deep indigo + a soft accent glow behind the rings, which
+   sit in the upper half (y ~60-240) under the top bar. */
+.slide-bg {
+  position:absolute;
+  inset:0;
+  z-index:1;
+  overflow:hidden;
+  background:
+    radial-gradient(circle 160px at 50% 144px, color-mix(in srgb, var(--accent) 22%, transparent) 0%, color-mix(in srgb, var(--accent) 6%, transparent) 55%, transparent 100%),
+    radial-gradient(120% 34% at 50% 104%, color-mix(in srgb, var(--accent) 9%, transparent) 0%, transparent 100%),
+    var(--dark);
+  user-select:none;
+}
+.motif {
+  position:absolute;
+  top:0; left:0;
+  width:300px; height:300px;
+  overflow:visible;
+}
+
+/* One shape language across all four variants: the site's mo-shell /
+   mo-ring / mo-in / mo-core, re-weighted for a dark ground */
+.motif .halo-ring { fill:none; stroke:oklch(0.86 0.06 274 / 0.08); stroke-width:1; }
+.motif .shell { fill:none; stroke:var(--orbit); stroke-width:2; }
+.motif .ring {
+  fill:none; stroke:var(--accent); stroke-width:2.4; stroke-linecap:round;
+  filter:drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+.motif .inner { fill:none; stroke:color-mix(in srgb, var(--accent-lt) 55%, transparent); stroke-width:1.8; stroke-linecap:round; }
+.motif .core { fill:var(--gold); }
+.motif .orbit { fill:none; stroke:var(--orbit); stroke-width:1.1; stroke-dasharray:2.4 5.6; }
+.motif .paths path { fill:none; stroke:var(--accent); stroke-width:1.3; stroke-linecap:round; opacity:.6; }
+.motif .node { fill:var(--gold); }
+.motif .node-next { fill:var(--dark); stroke:var(--gold); stroke-width:1.6; }
+.motif .ping { fill:none; stroke:var(--gold); stroke-width:1.2; animation:ping 2.6s ease-out infinite; }
+@keyframes ping { 0% { r:6; opacity:.85; } 100% { r:18; opacity:0; } }
+.motif .core-pulse { animation:core-pulse 2.8s ease-in-out infinite; }
+@keyframes core-pulse { 0%,100% { opacity:1; } 50% { opacity:.62; } }
+
+.motif .tag {
+  font-family:var(--mono); font-weight:600; font-size:7.5px; letter-spacing:.14em;
+  fill:var(--gold);
+}
+.motif .lbl {
+  font-family:var(--mono); font-weight:600; font-size:7px; letter-spacing:.12em;
+  fill:color-mix(in srgb, var(--hi) 72%, transparent);
+}
+.motif .lbl-on { fill:var(--gold); }
+.motif .lbl-sub {
+  font-family:var(--mono); font-weight:500; font-size:6.6px; letter-spacing:.02em;
+  fill:color-mix(in srgb, var(--hi) 56%, transparent);
+}
+
+/* Ambient motion: slow breathing scale + drift on the motif */
+.motif .drift {
+  transform-box:view-box;
+  transform-origin:150px 146px;
+  animation:drift 8s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from { transform:scale(1) translate(0, 0); }
+  to   { transform:scale(1.035) translate(0, -2px); }
+}
+
+/* Slide 1 · the mechanism as one 6.4s cycle, taken from the site's
+   triptych: the particle travels in (bind), the accent ring closes from
+   its quarter arc to a full ring (engulf), the particle breaks into four
+   fragments inside a dashed inner ring (destroy), then it resets. */
+.motif .virion { animation:bind 6.4s var(--ease) infinite; }
+.motif .spikes path { fill:none; stroke:var(--gold); stroke-width:1.6; stroke-linecap:round; }
+.motif .arrow { fill:none; stroke:var(--gold); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; animation:arrow 6.4s ease infinite; }
+@keyframes bind {
+  0%        { transform:translateX(-106px); opacity:0; }
+  8%        { transform:translateX(-106px); opacity:1; }
+  38%       { transform:translateX(0);      opacity:1; }
+  58%       { transform:translateX(0);      opacity:1; }
+  63%, 100% { transform:translateX(0);      opacity:0; }
+}
+@keyframes arrow {
+  0%, 8%    { opacity:0; }
+  12%, 28%  { opacity:1; }
+  36%, 100% { opacity:0; }
+}
+.motif .ring-close {
+  stroke-dasharray:314.16;
+  transform-box:fill-box; transform-origin:center; transform:rotate(-90deg);
+  animation:engulf 6.4s var(--ease) infinite;
+}
+@keyframes engulf {
+  0%, 38%   { stroke-dashoffset:236; }
+  56%, 90%  { stroke-dashoffset:0; }
+  100%      { stroke-dashoffset:236; }
+}
+.motif .inner-draw {
+  stroke-dasharray:188.5;
+  transform-box:fill-box; transform-origin:center; transform:rotate(-90deg);
+  animation:inner-draw 6.4s var(--ease) infinite;
+}
+@keyframes inner-draw {
+  0%, 40%   { stroke-dashoffset:188.5; opacity:1; }
+  56%, 60%  { stroke-dashoffset:0;     opacity:1; }
+  66%, 100% { stroke-dashoffset:0;     opacity:0; }
+}
+.motif .inner-dash { stroke-dasharray:4 6; animation:inner-dash 6.4s ease infinite; }
+@keyframes inner-dash {
+  0%, 60%   { opacity:0; }
+  66%, 90%  { opacity:1; }
+  97%, 100% { opacity:0; }
+}
+.motif .frags {
+  fill:var(--gold);
+  transform-box:view-box; transform-origin:150px 146px;
+  animation:destroy 6.4s var(--ease) infinite;
+}
+@keyframes destroy {
+  0%, 58%   { opacity:0; transform:scale(.35); }
+  66%       { opacity:1; transform:scale(1); }
+  88%       { opacity:1; transform:scale(1.18); }
+  95%, 100% { opacity:0; transform:scale(1.18); }
+}
+
+/* Slide 2 · pulses run from NV-387 out to both Phase II programmes */
+.motif .pulse { fill:var(--gold); offset-rotate:0deg; opacity:0; animation:travel 3.8s linear infinite; }
+.motif .pulses .pulse:nth-child(2) { animation-delay:.4s; }
+.motif .pulses .pulse:nth-child(3) { animation-delay:1.9s; }
+.motif .pulses .pulse:nth-child(4) { animation-delay:2.3s; }
+@keyframes travel {
+  0%   { offset-distance:0%;   opacity:0; }
+  10%  { opacity:.95; }
+  72%  { opacity:.95; }
+  88%  { offset-distance:100%; opacity:0; }
+  100% { offset-distance:100%; opacity:0; }
+}
+
+/* Slide 3 · designation seal: a slowly turning tick rosette round the
+   closed ring, curved mono lettering between them */
+.motif .rosette { transform-box:view-box; transform-origin:150px 142px; animation:spin 60s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.motif .ticks { fill:none; stroke:color-mix(in srgb, var(--accent-lt) 34%, transparent); stroke-width:5; stroke-dasharray:1.2 5.6; }
+.motif .ring-seal { animation:seal-glow 3.2s ease-in-out infinite; }
+@keyframes seal-glow { 0%,100% { stroke-width:2.4; } 50% { stroke-width:3.4; } }
+.motif .seal-txt {
+  font-family:var(--mono); font-weight:600; font-size:7px; letter-spacing:.2em;
+  fill:var(--gold);
+}
+.motif .seal-sub { fill:color-mix(in srgb, var(--hi) 62%, transparent); letter-spacing:.24em; }
+
+/* Slide 4 · the pipeline orbit: the company's own plates, duotoned */
+.motif .orbit-pulse { opacity:.95; animation:orbit 9s linear infinite; }
+@keyframes orbit { from { offset-distance:0%; } to { offset-distance:100%; } }
+.motif .rim { fill:none; stroke:oklch(0.86 0.06 274 / 0.28); stroke-width:1.2; }
+.motif .rim-on { stroke:var(--accent); stroke-width:1.8; filter:drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 70%, transparent)); }
+.motif .plates image { opacity:.95; }
+
+/* Inactive slides stop animating (saves CPU while hidden) */
+.slide:not(.active) .motif *,
+.slide:not(.active) .motif .drift { animation-play-state:paused; }
+
+.slide-scrim-top, .slide-scrim-bottom {
+  position:absolute;
+  left:0; right:0;
+  z-index:2;
+  pointer-events:none;
+}
+.slide-scrim-top {
+  top:0; height:74px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--dark) 92%, transparent) 0%, color-mix(in srgb, var(--dark) 55%, transparent) 60%, color-mix(in srgb, var(--dark) 0%, transparent) 100%);
+}
+.slide-scrim-bottom {
+  bottom:0; height:340px;
+  background:linear-gradient(0deg, var(--dark) 0%, color-mix(in srgb, var(--dark) 94%, transparent) 50%, color-mix(in srgb, var(--dark) 0%, transparent) 100%);
+}
+
+.slide-copy {
+  position:absolute;
+  inset:0;
+  z-index:3;
+  transform:translateY(12px);
+  transition:transform 0.9s var(--ease);
+}
+.slide.active .slide-copy { transform:translateY(0); }
+
+/* Floating stat chip (per slide) */
+.mid-chip {
+  position:absolute;
+  top:258px; left:18px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 13px 9px 11px;
+  background:color-mix(in srgb, var(--dark) 58%, transparent);
+  border-left:3px solid var(--accent);
+  border-radius:0 3px 3px 0;
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+}
+.chip-num {
+  font-family:var(--font-head);
+  font-weight:600;
+  font-size:20px;
+  line-height:1;
+  color:var(--white);
+  white-space:nowrap;
+}
+.chip-num em { font-style:normal; color:var(--accent-lt); }
+.chip-label {
+  font-family:var(--font);
+  font-size:8.4px;
+  line-height:1.3;
+  font-weight:400;
+  color:rgba(255,255,255,0.82);
+}
+
+/* Rotating headline block, pinned above the fixed bottom bar */
+.copy-bottom {
+  position:absolute;
+  left:0; right:0;
+  bottom:158px;
+  padding:0 18px;
+}
+.kicker {
+  font-family:var(--mono);
+  font-weight:600;
+  font-size:7.8px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--accent-lt);
+  margin-bottom:7px;
+}
+.copy-bottom h1 {
+  font-family:var(--font-head);
+  font-weight:500;
+  font-size:23px;
+  line-height:1.08;
+  letter-spacing:-0.01em;
+  color:var(--white);
+}
+.copy-bottom h1 em { font-style:normal; color:var(--accent-lt); }
+.copy-bottom p {
+  margin-top:8px;
+  font-size:11px;
+  line-height:1.42;
+  color:rgba(255,255,255,0.8);
+  max-width:258px;
+}
+
+/* ── Persistent chrome (never rotates) ─────────────────────────── */
+#top-bar {
+  position:absolute;
+  top:0; left:0; right:0;
+  z-index:5;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:16px 18px 0;
+}
+#logo { display:flex; align-items:center; gap:7px; }
+#logo .mark { width:19px; height:19px; flex:none; }
+#wordmark {
+  font-family:var(--font-head);
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:-0.01em;
+  color:var(--white);
+}
+#eyebrow {
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:7.4px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--accent-lt);
+}
+
+.nav-arrow {
+  position:absolute;
+  top:154px;
+  width:26px; height:26px;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:color-mix(in srgb, var(--dark) 45%, transparent);
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:50%;
+  color:rgba(255,255,255,0.9);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+  transition:background .2s ease, transform .15s ease;
+}
+.nav-arrow svg { width:13px; height:13px; }
+.nav-arrow:active { transform:scale(0.9); background:color-mix(in srgb, var(--accent) 55%, transparent); }
+#arrow-prev { left:10px; }
+#arrow-next { right:10px; }
+
+#bottom-fixed {
+  position:absolute;
+  left:0; right:0; bottom:0;
+  z-index:5;
+  padding:0 18px 11px;
+}
+
+#dots {
+  display:flex;
+  gap:6px;
+  margin-bottom:11px;
+}
+.dot {
+  width:14px; height:3px;
+  border-radius:2px;
+  background:rgba(255,255,255,0.28);
+  transition:background .3s ease, width .3s ease;
+  padding:6px 0;
+  background-clip:content-box;
+  box-sizing:content-box;
+}
+.dot.active { background-color:var(--accent); width:20px; }  /* background-color, not the shorthand: the shorthand resets background-clip and paints the whole 15px hit area as a square */
+
+#stat-row {
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.stat { display:flex; flex-direction:column; gap:3px; }
+.stat-num {
+  font-family:var(--font-head);
+  font-weight:600;
+  font-size:17px;
+  line-height:1;
+  color:var(--white);
+}
+.stat-num em { font-style:normal; color:var(--accent-lt); }
+.stat-label {
+  font-family:var(--font);
+  font-size:7.8px;
+  font-weight:400;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.6);
+}
+.stat-div { width:1px; height:26px; background:rgba(255,255,255,0.18); }
+
+#cta {
+  margin-top:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  width:100%;
+  height:42px;
+  background:var(--accent);
+  border-radius:6px;
+  color:var(--cta-ink);
+  font-family:var(--font);
+  font-weight:700;
+  font-size:12.5px;
+  letter-spacing:0.02em;
+  box-shadow:0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  animation:cta-pulse 1.8s ease-in-out 2.6s 6;
+}
+#cta-arrow { width:13px; height:13px; }
+
+/* Required disclosure line under the CTA (the IR page leads with its
+   going-concern disclosure, so the banner carries it too) */
+#disclosure {
+  margin-top:7px;
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:6.3px;
+  letter-spacing:0.02em;
+  line-height:1.4;
+  text-align:center;
+  color:rgba(255,255,255,0.56);
+}
+@keyframes cta-pulse {
+  0%, 100% { box-shadow:0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent); }
+  50%      { box-shadow:0 8px 26px color-mix(in srgb, var(--accent) 65%, transparent), 0 0 0 5px color-mix(in srgb, var(--accent) 12%, transparent); }
+}
+
+/* ── Entrance sequence (initial load only) ─────────────────────── */
+.reveal {
+  opacity:0;
+  transform:translateY(14px);
+  transition:opacity .7s var(--ease), transform .7s var(--ease);
+}
+#banner.is-live .reveal { opacity:1; transform:none; }
+#top-bar[data-delay="0"] { transition-delay:.05s; }
+#bottom-fixed[data-delay="4"] { transition-delay:.55s; }
+
+#click-tag-wrapper { position:absolute; width:0; height:0; overflow:hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .motif *, .motif .drift { animation:none !important; }
+  /* hold slide 1 on its engulfed state rather than mid-cycle */
+  .motif .ring-close { stroke-dashoffset:0; }
+  .motif .inner-draw { stroke-dashoffset:0; }
+  .motif .arrow, .motif .inner-dash, .motif .frags { opacity:0; }
+  .motif .pulse:not(.orbit-pulse) { opacity:0; }
+  #cta { animation:none; }
+  .reveal { transition-duration:.01s; transition-delay:0s !important; }
+  .slide, .slide-copy { transition-duration:.2s; }
+}
